@@ -1,0 +1,15 @@
+[package]
+name = "Kss"
+module_roots = ["src", "tests", "tools"]
+
+[toolchain]
+git = "https://github.com/ziranlang/ziran.git"
+ref = "master"
+
+[dependencies.kryon]
+git = "https://github.com/kryonlabs/kryon.git"
+ref = "master"
+
+[exports]
+Kss = "src/Kss/module.zi"
+SystemStyle = "src/system_style.zi"

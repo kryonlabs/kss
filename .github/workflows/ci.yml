@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: kss
+
+      - name: Build the ziran launcher
+        run: |
+          git clone --depth 1 https://github.com/ziranlang/ziran.git ziran
+          make -C ziran
+          echo "$PWD/ziran/build/bin" >> "$GITHUB_PATH"
+
+      - name: Test
+        working-directory: kss
+        run: |
+          ziran fetch --locked
+          make test style-pack-check
+
+      # A failure names the seed; rerun it with make fuzz FUZZ_SEED=N.
+      - name: Fuzz with this run's seed
+        working-directory: kss
+        run: env -u DISPLAY -u WAYLAND_DISPLAY make fuzz FUZZ_SEED=${{ github.run_number }} FUZZ_COUNT=10000
+
+      - name: Keep a failing sheet
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: kss-fuzz-failure
+          path: kss/build/kss-fuzz/failure-*.kss
+          if-no-files-found: ignore
