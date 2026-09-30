@@ -1056,8 +1056,10 @@ WriteOutcome :: (outcome: Outcome) {
     WriteText(2, " foreign blocks\n")
 }
 
+// Whitespace as the lexer skips it, including vertical tab and form feed,
+// so the formatter may drop exactly these bytes.
 IsSpace :: (byte: u8) -> bool {
-    return byte == 32 || byte == 9 || byte == 10 || byte == 13
+    return KssIsSpace(byte)
 }
 
 // True when a and b hold the same bytes apart from whitespace.
