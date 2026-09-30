@@ -39,6 +39,6 @@ an ignored `ziran.local.toml`:
 
 ```toml
 [overrides]
-ziran = "../ziran"
+ziran = "../../ziranlang/ziran"
 kryon = "../kryon"
 ```
