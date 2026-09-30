@@ -17,6 +17,10 @@ test:
 	$(ZIRAN) bundle --project --entry style_parse_behavior:Answer \
 		-o $(BUILD)/style-parse.zib tests/style_parse_behavior.zi
 	test "$$($(ZIRAN) run --project $(BUILD)/style-parse.zib)" = 42
+	# The fuzz check ignores whitespace the lexer skips; quoted text keeps it.
+	$(ZIRAN) bundle --project --entry format_quoted_whitespace:main \
+		-o $(BUILD)/format-quoted-whitespace.zib tests/format_quoted_whitespace.zi
+	test "$$($(ZIRAN) run --project $(BUILD)/format-quoted-whitespace.zib)" = 0
 	rm -rf $(BUILD)/style-parse-c
 	$(ZIRAN) build --project --target=c --entry style_parse_behavior:Answer \
 		-o $(BUILD)/style-parse-c tests/style_parse_behavior.zi
