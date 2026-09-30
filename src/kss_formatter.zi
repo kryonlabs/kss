@@ -126,7 +126,7 @@ KssFormatDirectiveStart :: (source: string, query_start: s32, name_length: s32) 
         pos = pos - 1
     }
     pos = pos - name_length - 1
-    if pos < 0 || source[pos] != 64 {
+    if pos < 0 || source[pos] != #char "@" {
         return -1
     }
     return pos
@@ -225,9 +225,9 @@ KssFormatScanRange :: (state: KssFormatState, from: s32, to: s32) -> KssFormatSt
         if cursor < (cast(s32)state.source.count) {
             byte = state.source[cursor]
         }
-        if byte == 47 && cursor + 1 < to && cursor + 1 < (cast(s32)state.source.count) {
+        if byte == #char "/" && cursor + 1 < to && cursor + 1 < (cast(s32)state.source.count) {
             next: u8 = state.source[cursor + 1]
-            if next == 47 {
+            if next == #char "/" {
                 end: s32 = cursor
                 while end < (cast(s32)state.source.count) && state.source[end] != 10 {
                     end = end + 1
@@ -236,12 +236,12 @@ KssFormatScanRange :: (state: KssFormatState, from: s32, to: s32) -> KssFormatSt
                 cursor = end
                 continue
             }
-            if next == 42 {
+            if next == #char "*" {
                 // An unclosed comment runs to the end of the source.
                 end: s32 = cast(s32)state.source.count
                 scan: s32 = cursor + 2
                 while scan + 1 < (cast(s32)state.source.count) {
-                    if state.source[scan] == 42 && state.source[scan + 1] == 47 {
+                    if state.source[scan] == #char "*" && state.source[scan + 1] == #char "/" {
                         end = scan + 2
                         break
                     }
@@ -312,7 +312,7 @@ KssFormatTrimStart :: (state: KssFormatState, start: s32, end: s32) -> s32 {
     pos: s32 = start
     while pos < end {
         byte: u8 = state.source[pos]
-        if byte == 32 || byte == 9 || byte == 13 {
+        if byte == #char " " || byte == 9 || byte == 13 {
             pos = pos + 1
         } else {
             break
@@ -325,7 +325,7 @@ KssFormatTrimEnd :: (state: KssFormatState, start: s32, end: s32) -> s32 {
     pos: s32 = end
     while pos > start {
         byte: u8 = state.source[pos - 1]
-        if byte == 32 || byte == 9 || byte == 13 {
+        if byte == #char " " || byte == 9 || byte == 13 {
             pos = pos - 1
         } else {
             break
@@ -356,19 +356,19 @@ KssFormatScanNext :: (source: string, scan: KssFormatScan, end: s32) -> KssForma
     scan.code = false
     scan.pos = at + 1
     if scan.mode == 0 {
-        if byte == 34 || byte == 39 {
+        if byte == #char "\"" || byte == #char "'" {
             scan.mode = cast(s32)byte
-        } else if byte == 47 && next == 42 {
+        } else if byte == #char "/" && next == #char "*" {
             scan.mode = 42
             scan.pos = at + 2
-        } else if byte == 47 && next == 47 {
+        } else if byte == #char "/" && next == #char "/" {
             scan.mode = 47
             scan.pos = at + 2
         } else {
             scan.code = true
         }
     } else if scan.mode == 42 {
-        if byte == 42 && next == 47 {
+        if byte == #char "*" && next == #char "/" {
             scan.mode = 0
             scan.pos = at + 2
         }
@@ -378,7 +378,7 @@ KssFormatScanNext :: (source: string, scan: KssFormatScan, end: s32) -> KssForma
         }
     } else if byte == 10 || byte == 13 || cast(s32)byte == scan.mode {
         scan.mode = 0
-    } else if byte == 92 && at + 1 < end && next != 10 && next != 13 {
+    } else if byte == #char "\\" && at + 1 < end && next != 10 && next != 13 {
         scan.pos = at + 2
     }
     return scan
@@ -412,11 +412,11 @@ KssFormatLineCanReflow :: (source: string, start: s32, end: s32) -> bool {
         scan = KssFormatScanNext(source, scan, end)
         if scan.code {
             byte: u8 = source[at]
-            if byte == 123 {
+            if byte == #char "{" {
                 open_seen = true
-            } else if byte == 59 && open_seen {
+            } else if byte == #char ";" && open_seen {
                 semicolon_seen = true
-            } else if byte == 125 && semicolon_seen {
+            } else if byte == #char "}" && semicolon_seen {
                 close_seen = true
             }
         }
@@ -459,7 +459,7 @@ KssFormatEmitReflowLine :: (state: KssFormatState, start: s32, end: s32,
         if scan.code {
             byte = state.source[cursor]
         }
-        if byte == 123 {
+        if byte == #char "{" {
             state = KssFormatEmitLineStart(state, leading_break, first_line && !emitted, depth * 4)
             // A brace with nothing before it opens its own line, unspaced.
             if KssFormatTrimStart(state, token_start, cursor) < KssFormatTrimEnd(state, token_start, cursor) {
@@ -470,12 +470,12 @@ KssFormatEmitReflowLine :: (state: KssFormatState, start: s32, end: s32,
             emitted = true
             depth = depth + 1
             token_start = cursor + 1
-        } else if byte == 59 {
+        } else if byte == #char ";" {
             state = KssFormatEmitLineStart(state, leading_break, first_line && !emitted, depth * 4)
             state = KssFormatEmitTrimmedRange(state, token_start, cursor + 1)
             emitted = true
             token_start = cursor + 1
-        } else if byte == 125 {
+        } else if byte == #char "}" {
             if KssFormatTrimStart(state, token_start, cursor) < KssFormatTrimEnd(state, token_start, cursor) {
                 state = KssFormatEmitLineStart(state, leading_break, first_line && !emitted, depth * 4)
                 state = KssFormatEmitTrimmedRange(state, token_start, cursor)
@@ -513,7 +513,7 @@ KssFormatEmitConstruct :: (state: KssFormatState, construct: KssFormatConstruct,
         trimmed: s32 = pos
         while trimmed < line_end {
             byte: u8 = state.source[trimmed]
-            if byte == 32 || byte == 9 || byte == 13 {
+            if byte == #char " " || byte == 9 || byte == 13 {
                 trimmed = trimmed + 1
             } else {
                 break
@@ -526,7 +526,7 @@ KssFormatEmitConstruct :: (state: KssFormatState, construct: KssFormatConstruct,
                 // Inside a block comment the line is text; keep it whole.
                 copy_start = pos
                 indent = 0
-            } else if state.source[trimmed] == 125 && depth > 0 {
+            } else if state.source[trimmed] == #char "}" && depth > 0 {
                 indent = depth - 1
             }
             if mode == 0 && KssFormatLineCanReflow(state.source, trimmed, line_end) {
@@ -545,9 +545,9 @@ KssFormatEmitConstruct :: (state: KssFormatState, construct: KssFormatConstruct,
                 scan = KssFormatScanNext(state.source, scan, line_end)
                 if scan.code {
                     byte: u8 = state.source[at]
-                    if byte == 123 {
+                    if byte == #char "{" {
                         depth = depth + 1
-                    } else if byte == 125 && depth > 0 {
+                    } else if byte == #char "}" && depth > 0 {
                         depth = depth - 1
                     }
                 }

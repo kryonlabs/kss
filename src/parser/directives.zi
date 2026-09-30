@@ -23,7 +23,7 @@ KssParseDirective :: (p: KssParser) -> KssParser {
         if p.import_depth > 0 {
             c = KssSkipSpace(c)
             p.cursor = c
-            if !KssAtEnd(c) && p.cursor.source[p.cursor.pos] == 59 {
+            if !KssAtEnd(c) && p.cursor.source[p.cursor.pos] == #char ";" {
                 c = KssAdvance(c, 1)
                 p.cursor = c
             }
@@ -269,7 +269,7 @@ KssStep :: (p: KssParser) -> KssParser {
         p.status = cast(s32)KssStatusDone
         return p
     }
-    if p.cursor.source[p.cursor.pos] == 64 {
+    if p.cursor.source[p.cursor.pos] == #char "@" {
         p = KssParseDirective(p)
         if p.status == cast(s32)KssStatusNeedImport ||
            p.status == cast(s32)KssStatusError ||
