@@ -1,6 +1,6 @@
 #import "kryon/drawing_props"
 #import "system_style"
-#import "kryon/SystemTheme"
+#import "kryon/system_theme"
 
 Sweet :: "@define-color theme_fg_color #C3C7D1;\n@define-color theme_bg_color #161925;\n@define-color theme_base_color #181b28;\n@define-color theme_selected_bg_color #c50ed2;\n@define-color theme_selected_fg_color #fefefe;\n@define-color error_color #e6133e;\n@define-color warning_color #cc5500;\n@define-color success_color #0096b1;\n";
 
