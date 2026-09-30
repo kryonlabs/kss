@@ -461,7 +461,7 @@ KssReadScalar :: (c: KssCursor) -> KssScalarResult {
         power = power * 10.0
         step = step + 1
     }
-    value64 = cast(float64)whole + cast(float64)fraction / power
+    value64 = whole + fraction / power
     step = 0
     while step < exponent {
         if exponent_negative {

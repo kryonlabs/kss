@@ -24,7 +24,7 @@ KssApplyOverride :: (p: KssParser, index: s32) -> KssParser {
             same: bool = true
             byte_index: s32 = 0
             while byte_index < p.tokens[index].name.length {
-                if KssLower(cast(u8)p.overrides[override].name[byte_index]) !=
+                if KssLower(p.overrides[override].name[byte_index]) !=
                    KssLower(p.tokens[index].name.bytes[byte_index]) {
                     same = false
                 }
