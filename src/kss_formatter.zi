@@ -357,7 +357,7 @@ KssFormatScanNext :: (source: string, scan: KssFormatScan, end: s32) -> KssForma
     scan.pos = at + 1
     if scan.mode == 0 {
         if byte == #char "\"" || byte == #char "'" {
-            scan.mode = cast(s32)byte
+            scan.mode = byte
         } else if byte == #char "/" && next == #char "*" {
             scan.mode = 42
             scan.pos = at + 2

@@ -537,7 +537,7 @@ KssSelectorPartMode :: (c: KssCursor, sequence: bool, relative: bool) -> KssSele
             if initial == 0 && !relative {
                 return result
             }
-            result.combinator = cast(s32)byte
+            result.combinator = byte
             skipped = KssSelectorSpace(KssAdvance(c, 1))
             c = skipped.parser
             result.parser = c

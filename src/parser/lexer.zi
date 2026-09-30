@@ -359,11 +359,11 @@ KssReadHexColor :: (c: KssCursor) -> KssColorResult {
         byte: u8 = c.source[c.pos]
         digit: u32 = 0
         if byte >= #char "0" && byte <= #char "9" {
-            digit = cast(u32)(byte - 48)
+            digit = byte - 48
         } else if byte >= #char "a" && byte <= #char "f" {
-            digit = cast(u32)(byte - 87)
+            digit = byte - 87
         } else {
-            digit = cast(u32)(byte - 55)
+            digit = byte - 55
         }
         value = (value << cast(u32)4) | digit
         digits = digits + 1
