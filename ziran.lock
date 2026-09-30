@@ -24,7 +24,7 @@
     "name": "Kss"
   },
   "toolchain": {
-    "commit": "18d60d0c467b5afb664e257c3bb28a9004e77f1a",
+    "commit": "90b3dce231f8a7f4a51e62c74d2d4361bfd4010a",
     "ref": "master",
     "url": "https://github.com/ziranlang/ziran.git"
   }
