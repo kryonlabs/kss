@@ -11,20 +11,20 @@
       "url": "https://github.com/raysan5/raylib.git"
     },
     {
-      "commit": "29a8d453158131c25e994c5e628e7ce2d412ef03",
+      "commit": "2dacc9eb7c2c023c0cc111b2c4deb210afdb4886",
       "dependencies": {"raylib": "p5a77c9c35110e925"},
-      "id": "p63ea47daa6d3e9c3",
+      "id": "p83be2ed3d78fa9cf",
       "name": "Kryon",
       "ref": "master",
       "url": "https://github.com/kryonlabs/kryon.git"
     }
   ],
   "root": {
-    "dependencies": {"kryon": "p63ea47daa6d3e9c3"},
+    "dependencies": {"kryon": "p83be2ed3d78fa9cf"},
     "name": "Kss"
   },
   "toolchain": {
-    "commit": "51abe2b02d10d3b2f273bf96d7249d25fa0981a9",
+    "commit": "18d60d0c467b5afb664e257c3bb28a9004e77f1a",
     "ref": "master",
     "url": "https://github.com/ziranlang/ziran.git"
   }

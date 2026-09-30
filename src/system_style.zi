@@ -4,8 +4,8 @@
 #import "kss_parser"
 #import "style_pack_classic"
 #import "style_parse"
-#import "kryon/SystemTheme"
-#import "kryon/Theme"
+#import "kryon/system_theme"
+#import "kryon/theme"
 
 using KssStatus;
 
