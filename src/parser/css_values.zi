@@ -26,7 +26,7 @@ KssCSSValue :: struct {
 
 #program_export
 KssCSSPropertyKind :: (name: KssName) -> s32 {
-    if name.length > 2 && name.bytes[0] == 45 && name.bytes[1] == 45 {
+    if name.length > 2 && name.bytes[0] == #char "-" && name.bytes[1] == #char "-" {
         return -2
     }
     if KssNameEquals(name, "background") ||
@@ -584,7 +584,7 @@ KssCSSPropertyKind :: (name: KssName) -> s32 {
 // canonical KSS spellings; DOM camel-case names are only accepted by unit policy.
 #program_export
 KssCSSPropertyName :: (name: string) -> string {
-    if name.count >= 2 && name[0] == 45 && name[1] == 45 {
+    if name.count >= 2 && name[0] == #char "-" && name[1] == #char "-" {
         return name
     }
     if name.count > 64 {
@@ -885,7 +885,7 @@ KssCSSValueFromText :: (source: string) -> KssCSSValue {
     scalar: KssScalarResult = KssReadScalar(c)
     if scalar.ok {
         c = scalar.parser
-        if KssPeek(c, 0) == 112 && KssPeek(c, 1) == 120 {
+        if KssPeek(c, 0) == #char "p" && KssPeek(c, 1) == #char "x" {
             c = KssAdvance(c, 2)
         }
         c = KssSkipSpace(c)

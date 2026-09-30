@@ -41,7 +41,7 @@ KssAttributeMatches :: (value: string, needle: string, operation: string, presen
     }
     if operation == "|=" {
         return value == needle || (KssTextAt(value, needle, 0) &&
-            (cast(s32)value.count) > (cast(s32)needle.count) && value[(cast(s32)needle.count)] == 45)
+            (cast(s32)value.count) > (cast(s32)needle.count) && value[(cast(s32)needle.count)] == #char "-")
     }
     if (cast(s32)needle.count) == 0 {
         return false
@@ -114,10 +114,10 @@ KssParseNth :: (source: string) -> KssNthFormula {
         }
     }
     sign: s64 = 1
-    if KssPeek(c, 0) == 45 {
+    if KssPeek(c, 0) == #char "-" {
         sign = -1
         c = KssAdvance(c, 1)
-    } else if KssPeek(c, 0) == 43 {
+    } else if KssPeek(c, 0) == #char "+" {
         c = KssAdvance(c, 1)
     }
     number: s64 = 0
@@ -130,7 +130,7 @@ KssParseNth :: (source: string) -> KssNthFormula {
         digits = true
         c = KssAdvance(c, 1)
     }
-    if KssLower(KssPeek(c, 0)) != 110 {
+    if KssLower(KssPeek(c, 0)) != #char "n" {
         tail = KssSelectorSpace(c)
         result.ok = digits && tail.ok && KssAtEnd(tail.parser)
         if result.ok {
@@ -150,9 +150,9 @@ KssParseNth :: (source: string) -> KssNthFormula {
     offset: s64 = 0
     if !KssAtEnd(c) {
         sign = 1
-        if KssPeek(c, 0) == 45 {
+        if KssPeek(c, 0) == #char "-" {
             sign = -1
-        } else if KssPeek(c, 0) != 43 {
+        } else if KssPeek(c, 0) != #char "+" {
             return result
         }
         space = KssSelectorSpace(KssAdvance(c, 1))
@@ -474,7 +474,7 @@ KssSelectorSpan :: struct {
 
 KssSelectorComment :: (c: KssCursor) -> KssExpectResult {
     result: KssExpectResult
-    line: bool = KssPeek(c, 1) == 47
+    line: bool = KssPeek(c, 1) == #char "/"
     c = KssAdvance(c, 2)
     while !KssAtEnd(c) {
         if line && KssPeek(c, 0) == 10 {
@@ -482,7 +482,7 @@ KssSelectorComment :: (c: KssCursor) -> KssExpectResult {
             result.ok = true
             return result
         }
-        if !line && KssPeek(c, 0) == 42 && KssPeek(c, 1) == 47 {
+        if !line && KssPeek(c, 0) == #char "*" && KssPeek(c, 1) == #char "/" {
             result.parser = KssAdvance(c, 2)
             result.ok = true
             return result
@@ -499,7 +499,7 @@ KssSelectorSpace :: (c: KssCursor) -> KssExpectResult {
     while !KssAtEnd(c) {
         if KssIsSpace(KssPeek(c, 0)) {
             c = KssAdvance(c, 1)
-        } else if KssPeek(c, 0) == 47 && (KssPeek(c, 1) == 42 || KssPeek(c, 1) == 47) {
+        } else if KssPeek(c, 0) == #char "/" && (KssPeek(c, 1) == #char "*" || KssPeek(c, 1) == #char "/") {
             comment: KssExpectResult = KssSelectorComment(c)
             c = comment.parser
             if !comment.ok {
@@ -524,7 +524,7 @@ KssSelectorPartMode :: (c: KssCursor, sequence: bool, relative: bool) -> KssSele
         return result
     }
     if KssAtEnd(c) {
-        result.ok = !(initial > 0 && c.source[initial - 1] == 44)
+        result.ok = !(initial > 0 && c.source[initial - 1] == #char ",")
         result.done = true
         return result
     }
@@ -533,7 +533,7 @@ KssSelectorPartMode :: (c: KssCursor, sequence: bool, relative: bool) -> KssSele
             result.combinator = 32
         }
         byte: u8 = KssPeek(c, 0)
-        if byte == 62 || byte == 43 || byte == 126 {
+        if byte == #char ">" || byte == #char "+" || byte == #char "~" {
             if initial == 0 && !relative {
                 return result
             }
@@ -554,7 +554,7 @@ KssSelectorPartMode :: (c: KssCursor, sequence: bool, relative: bool) -> KssSele
     while !KssAtEnd(c) {
         byte: u8 = KssPeek(c, 0)
         if quote != 0 {
-            if byte == 92 && !KssIsLineBreak(KssPeek(c, 1)) {
+            if byte == #char "\\" && !KssIsLineBreak(KssPeek(c, 1)) {
                 c = KssAdvance(c, 2)
                 end = c.pos
                 continue
@@ -562,9 +562,9 @@ KssSelectorPartMode :: (c: KssCursor, sequence: bool, relative: bool) -> KssSele
             if byte == quote || KssIsLineBreak(byte) {
                 quote = 0
             }
-        } else if byte == 34 || byte == 39 {
+        } else if byte == #char "\"" || byte == #char "'" {
             quote = byte
-        } else if byte == 47 && (KssPeek(c, 1) == 42 || (depth == 0 && KssPeek(c, 1) == 47)) {
+        } else if byte == #char "/" && (KssPeek(c, 1) == #char "*" || (depth == 0 && KssPeek(c, 1) == #char "/")) {
             comment: KssExpectResult = KssSelectorComment(c)
             c = comment.parser
             if !comment.ok {
@@ -572,29 +572,29 @@ KssSelectorPartMode :: (c: KssCursor, sequence: bool, relative: bool) -> KssSele
                 return result
             }
             continue
-        } else if byte == 40 || byte == 91 {
+        } else if byte == #char "(" || byte == #char "[" {
             if depth >= 64 {
                 result.parser = c
                 return result
             }
             stack.bytes[depth] = byte
             depth = depth + 1
-        } else if byte == 41 || byte == 93 {
+        } else if byte == #char ")" || byte == #char "]" {
             if depth == 0 {
                 result.parser = c
                 return result
             }
             opening: u8 = stack.bytes[depth - 1]
-            if (byte == 41 && opening != 40) || (byte == 93 && opening != 91) {
+            if (byte == #char ")" && opening != #char "(") || (byte == #char "]" && opening != #char "[") {
                 result.parser = c
                 return result
             }
             depth = depth - 1
         } else if depth == 0 {
-            if !sequence && byte == 44 {
+            if !sequence && byte == #char "," {
                 break
             }
-            if sequence && (KssIsSpace(byte) || byte == 62 || byte == 43 || byte == 126) {
+            if sequence && (KssIsSpace(byte) || byte == #char ">" || byte == #char "+" || byte == #char "~") {
                 break
             }
         }
@@ -608,7 +608,7 @@ KssSelectorPartMode :: (c: KssCursor, sequence: bool, relative: bool) -> KssSele
         return result
     }
     result.length = end - result.start
-    if !sequence && KssPeek(c, 0) == 44 {
+    if !sequence && KssPeek(c, 0) == #char "," {
         result.parser = KssAdvance(c, 1)
     }
     result.ok = true
@@ -641,16 +641,16 @@ KssSelectorGroup :: (c: KssCursor) -> KssSelectorSpan {
     while !KssAtEnd(c) {
         byte: u8 = KssPeek(c, 0)
         if quote != 0 {
-            if byte == 92 && !KssIsLineBreak(KssPeek(c, 1)) {
+            if byte == #char "\\" && !KssIsLineBreak(KssPeek(c, 1)) {
                 c = KssAdvance(c, 2)
                 continue
             }
             if byte == quote || KssIsLineBreak(byte) {
                 quote = 0
             }
-        } else if byte == 34 || byte == 39 {
+        } else if byte == #char "\"" || byte == #char "'" {
             quote = byte
-        } else if byte == 47 && KssPeek(c, 1) == 42 {
+        } else if byte == #char "/" && KssPeek(c, 1) == #char "*" {
             comment: KssExpectResult = KssSelectorComment(c)
             c = comment.parser
             if !comment.ok {
@@ -658,16 +658,16 @@ KssSelectorGroup :: (c: KssCursor) -> KssSelectorSpan {
                 return result
             }
             continue
-        } else if byte == 40 || byte == 91 {
+        } else if byte == #char "(" || byte == #char "[" {
             if depth >= 64 {
                 result.parser = c
                 return result
             }
             stack.bytes[depth] = byte
             depth = depth + 1
-        } else if byte == 41 || byte == 93 {
+        } else if byte == #char ")" || byte == #char "]" {
             opening = stack.bytes[depth - 1]
-            if (byte == 41 && opening != 40) || (byte == 93 && opening != 91) {
+            if (byte == #char ")" && opening != #char "(") || (byte == #char "]" && opening != #char "[") {
                 result.parser = c
                 return result
             }
@@ -831,7 +831,7 @@ KssPseudoName :: (source: string) -> KssName {
     name: KssName = KssStateName(source)
     index: s32 = 0
     while index < name.length {
-        if name.bytes[index] == 95 {
+        if name.bytes[index] == #char "_" {
             name.bytes[index] = 45
         }
         index = index + 1
@@ -891,10 +891,10 @@ KssSelectorAttributeAtom :: (result: KssSelectorAtom, group: KssSelectorSpan) ->
     }
     start = c.pos
     byte: u8 = KssPeek(c, 0)
-    if byte == 126 || byte == 124 || byte == 94 || byte == 36 || byte == 42 {
+    if byte == #char "~" || byte == #char "|" || byte == #char "^" || byte == #char "$" || byte == #char "*" {
         c = KssAdvance(c, 1)
     }
-    if KssPeek(c, 0) != 61 {
+    if KssPeek(c, 0) != #char "=" {
         return result
     }
     c = KssAdvance(c, 1)
@@ -907,11 +907,11 @@ KssSelectorAttributeAtom :: (result: KssSelectorAtom, group: KssSelectorSpan) ->
     start = c.pos
     end: s32 = (cast(s32)c.source.count)
     quote: u8 = KssPeek(c, 0)
-    if quote == 34 || quote == 39 {
+    if quote == #char "\"" || quote == #char "'" {
         c = KssAdvance(c, 1)
         start = c.pos
         while !KssAtEnd(c) && KssPeek(c, 0) != quote && !KssIsLineBreak(KssPeek(c, 0)) {
-            if KssPeek(c, 0) == 92 && !KssIsLineBreak(KssPeek(c, 1)) {
+            if KssPeek(c, 0) == #char "\\" && !KssIsLineBreak(KssPeek(c, 1)) {
                 c = KssAdvance(c, 2)
             } else {
                 c = KssAdvance(c, 1)
@@ -927,7 +927,7 @@ KssSelectorAttributeAtom :: (result: KssSelectorAtom, group: KssSelectorSpan) ->
         }
     } else {
         while !KssAtEnd(c) && !KssIsSpace(KssPeek(c, 0)) {
-            if KssPeek(c, 0) == 47 && KssPeek(c, 1) == 42 {
+            if KssPeek(c, 0) == #char "/" && KssPeek(c, 1) == #char "*" {
                 break
             }
             c = KssAdvance(c, 1)
@@ -956,16 +956,16 @@ KssHasArgumentAllowed :: (source: string) -> bool {
             return false
         }
         byte: u8 = KssPeek(c, 0)
-        if byte == 91 {
+        if byte == #char "[" {
             group: KssSelectorSpan = KssSelectorGroup(c)
             if !group.ok {
                 return false
             }
             c = group.parser
-        } else if byte == 34 || byte == 39 {
+        } else if byte == #char "\"" || byte == #char "'" {
             c = KssAdvance(c, 1)
             while !KssAtEnd(c) && KssPeek(c, 0) != byte {
-                if KssPeek(c, 0) == 92 {
+                if KssPeek(c, 0) == #char "\\" {
                     c = KssAdvance(c, 2)
                 } else {
                     c = KssAdvance(c, 1)
@@ -975,7 +975,7 @@ KssHasArgumentAllowed :: (source: string) -> bool {
                 return false
             }
             c = KssAdvance(c, 1)
-        } else if byte == 58 {
+        } else if byte == #char ":" {
             c = KssAdvance(c, 1)
             start: s32 = c.pos
             name: KssNameResult = KssReadSelectorName(c)
@@ -984,7 +984,7 @@ KssHasArgumentAllowed :: (source: string) -> bool {
             }
             c = name.parser
             canonical: KssName = KssPseudoName(source[start:c.pos])
-            if KssNameEquals(canonical, "has") && KssPeek(c, 0) == 40 {
+            if KssNameEquals(canonical, "has") && KssPeek(c, 0) == #char "(" {
                 return false
             }
         } else {
@@ -1011,7 +1011,7 @@ KssSelectorNext :: (parser: KssSelectorCursor) -> KssSelectorAtom {
     }
     byte: u8 = KssPeek(c, 0)
     start: s32 = c.pos
-    if byte == 91 {
+    if byte == #char "[" {
         group: KssSelectorSpan = KssSelectorGroup(c)
         result.parser.cursor = group.parser
         if !group.ok {
@@ -1024,7 +1024,7 @@ KssSelectorNext :: (parser: KssSelectorCursor) -> KssSelectorAtom {
         }
         return result
     }
-    if byte == 35 || byte == 46 || byte == 58 {
+    if byte == #char "#" || byte == #char "." || byte == #char ":" {
         c = KssAdvance(c, 1)
         start = c.pos
         name: KssNameResult = KssReadSelectorName(c)
@@ -1033,10 +1033,10 @@ KssSelectorNext :: (parser: KssSelectorCursor) -> KssSelectorAtom {
         }
         c = name.parser
         result.name = c.source[start:c.pos]
-        if byte == 35 {
+        if byte == #char "#" {
             result.kind = cast(s32)KssSelectorId
             result.parser.specificity = result.parser.specificity + StyleSpecificity(0, 0, 0, 1)
-        } else if byte == 46 {
+        } else if byte == #char "." {
             result.kind = cast(s32)KssSelectorClass
             result.parser.specificity = result.parser.specificity + StyleSpecificity(0, 0, 1, 0)
         } else {
@@ -1046,7 +1046,7 @@ KssSelectorNext :: (parser: KssSelectorCursor) -> KssSelectorAtom {
                 return result
             }
             result.parser.specificity = result.parser.specificity + StyleSpecificity(0, 1, 0, 0)
-            if KssPeek(c, 0) == 40 {
+            if KssPeek(c, 0) == #char "(" {
                 group: KssSelectorSpan = KssSelectorGroup(c)
                 result.parser.cursor = group.parser
                 if !group.ok {
@@ -1081,18 +1081,18 @@ KssSelectorNext :: (parser: KssSelectorCursor) -> KssSelectorAtom {
             }
         }
     } else {
-        if parser.has_kind || (!KssIdentStart(byte) && byte != 42) {
+        if parser.has_kind || (!KssIdentStart(byte) && byte != #char "*") {
             return result
         }
         while !KssAtEnd(c) {
             byte = KssPeek(c, 0)
-            if KssIsSpace(byte) || byte == 46 || byte == 35 || byte == 91 || byte == 58 {
+            if KssIsSpace(byte) || byte == #char "." || byte == #char "#" || byte == #char "[" || byte == #char ":" {
                 break
             }
-            if byte == 47 && (KssPeek(c, 1) == 42 || KssPeek(c, 1) == 47) {
+            if byte == #char "/" && (KssPeek(c, 1) == #char "*" || KssPeek(c, 1) == #char "/") {
                 break
             }
-            if byte == 44 || byte == 40 || byte == 41 || byte == 93 || byte == 62 || byte == 43 || byte == 126 {
+            if byte == #char "," || byte == #char "(" || byte == #char ")" || byte == #char "]" || byte == #char ">" || byte == #char "+" || byte == #char "~" {
                 return result
             }
             c = KssAdvance(c, 1)

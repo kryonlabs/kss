@@ -97,9 +97,9 @@ KssSkipBlockRemainder :: (p: KssParser) -> KssParser {
     c: KssCursor = p.cursor
     depth: s32 = 1
     while !KssAtEnd(c) && depth > 0 {
-        if c.source[c.pos] == 123 {
+        if c.source[c.pos] == #char "{" {
             depth = depth + 1
-        } else if c.source[c.pos] == 125 {
+        } else if c.source[c.pos] == #char "}" {
             depth = depth - 1
         }
         c = KssAdvance(c, 1)
@@ -248,7 +248,7 @@ KssParseThemeBlock :: (p: KssParser, name: KssName) -> KssParser {
         if KssAtEnd(c) {
             return KssFail(p, "unterminated theme block")
         }
-        if p.cursor.source[p.cursor.pos] == 125 {
+        if p.cursor.source[p.cursor.pos] == #char "}" {
             c = KssAdvance(c, 1)
             p.cursor = c
             running = false
@@ -302,7 +302,7 @@ KssContinueEnvBlock :: (p: KssParser) -> KssParser {
         if KssAtEnd(c) {
             return KssFail(p, "unterminated environment block")
         }
-        if c.source[c.pos] == 125 {
+        if c.source[c.pos] == #char "}" {
             c = KssAdvance(c, 1)
             p.cursor = c
             p.in_env = false
@@ -339,16 +339,16 @@ KssContinueEnvBlock :: (p: KssParser) -> KssParser {
 KssReadVariantLabel :: (c: KssCursor) -> KssNameResult {
     result: KssNameResult
     c = KssSkipSpace(c)
-    if KssAtEnd(c) || c.source[c.pos] != 34 {
+    if KssAtEnd(c) || c.source[c.pos] != #char "\"" {
         result.parser = c
         return result
     }
     c = KssAdvance(c, 1)
-    while !KssAtEnd(c) && c.source[c.pos] != 34 && !KssIsLineBreak(c.source[c.pos]) {
+    while !KssAtEnd(c) && c.source[c.pos] != #char "\"" && !KssIsLineBreak(c.source[c.pos]) {
         result.name = KssNameAppend(result.name, c.source[c.pos])
         c = KssAdvance(c, 1)
     }
-    if KssAtEnd(c) || c.source[c.pos] != 34 {
+    if KssAtEnd(c) || c.source[c.pos] != #char "\"" {
         result.parser = c
         return result
     }
@@ -424,7 +424,7 @@ KssContinueVariantBlock :: (p: KssParser) -> KssParser {
         if KssAtEnd(c) {
             return KssFail(p, "unterminated variant block")
         }
-        if c.source[c.pos] == 125 {
+        if c.source[c.pos] == #char "}" {
             c = KssAdvance(c, 1)
             p.cursor = c
             p.in_variant = false
@@ -492,7 +492,7 @@ KssParseTokenGroup :: (p: KssParser, origin_kind: s32) -> KssParser {
         if KssAtEnd(c) {
             return KssFail(p, "unterminated token group")
         }
-        if p.cursor.source[p.cursor.pos] == 125 {
+        if p.cursor.source[p.cursor.pos] == #char "}" {
             c = KssAdvance(c, 1)
             p.cursor = c
             running = false
@@ -578,7 +578,7 @@ KssParseTokensBlock :: (p: KssParser, origin_kind: s32) -> KssParser {
         if KssAtEnd(c) {
             return KssFail(p, "unterminated tokens block")
         }
-        if c.source[c.pos] == 125 {
+        if c.source[c.pos] == #char "}" {
             c = KssAdvance(c, 1)
             p.cursor = c
             running = false
@@ -649,7 +649,7 @@ KssParseLayerDeclaration :: (p: KssParser) -> KssParser {
         p.cursor = c
         c = KssSkipSpace(c)
         p.cursor = c
-        if !KssAtEnd(c) && p.cursor.source[p.cursor.pos] == 44 {
+        if !KssAtEnd(c) && p.cursor.source[p.cursor.pos] == #char "," {
             c = KssAdvance(c, 1)
             p.cursor = c
             continue
@@ -667,13 +667,13 @@ KssReadImportTarget :: (p: KssParser) -> KssNameResult {
         result.parser = c
         return result
     }
-    if c.source[c.pos] == 60 {
+    if c.source[c.pos] == #char "<" {
         c = KssAdvance(c, 1)
         while !KssAtEnd(c) && KssImportTargetByte(c.source[c.pos]) {
             result.name = KssNameAppend(result.name, c.source[c.pos])
             c = KssAdvance(c, 1)
         }
-        if KssAtEnd(c) || c.source[c.pos] != 62 {
+        if KssAtEnd(c) || c.source[c.pos] != #char ">" {
             result.parser = c
             return result
         }
@@ -682,13 +682,13 @@ KssReadImportTarget :: (p: KssParser) -> KssNameResult {
         result.ok = result.name.length > 0
         return result
     }
-    if c.source[c.pos] == 34 {
+    if c.source[c.pos] == #char "\"" {
         c = KssAdvance(c, 1)
         while !KssAtEnd(c) && KssImportTargetByte(c.source[c.pos]) {
             result.name = KssNameAppend(result.name, c.source[c.pos])
             c = KssAdvance(c, 1)
         }
-        if KssAtEnd(c) || c.source[c.pos] != 34 {
+        if KssAtEnd(c) || c.source[c.pos] != #char "\"" {
             result.parser = c
             return result
         }
@@ -717,7 +717,7 @@ KssParseLayerList :: (p: KssParser, block_start: s32) -> KssParser {
     p.cursor = c
     c = KssSkipSpace(c)
     p.cursor = c
-    if !KssAtEnd(c) && p.cursor.source[p.cursor.pos] == 44 {
+    if !KssAtEnd(c) && p.cursor.source[p.cursor.pos] == #char "," {
         c = KssAdvance(c, 1)
         p.cursor = c
         p = KssParseLayerDeclaration(p)
