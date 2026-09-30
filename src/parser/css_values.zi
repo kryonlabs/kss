@@ -935,7 +935,7 @@ KssResolveCSSValue :: (p: KssParser, property: string, source: string) -> KssCSS
         result.material = p.tokens[index].material
     } else {
         result.kind = cast(s32)KssCSSNumber
-        result.number = cast(float64)p.tokens[index].number
+        result.number = p.tokens[index].number
     }
     return result
 }
