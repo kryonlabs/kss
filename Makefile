@@ -14,6 +14,7 @@ check: test style-pack-check fuzz
 
 test:
 	$(ZIRAN) check --project
+	$(ZIRAN) check --project src/kss_lexer_laws.zi
 	$(ZIRAN) bundle --project --entry style_parse_behavior:Answer \
 		-o $(BUILD)/style-parse.zib tests/style_parse_behavior.zi
 	test "$$($(ZIRAN) run --project $(BUILD)/style-parse.zib)" = 42
