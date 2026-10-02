@@ -34,11 +34,11 @@ AddressSanitizer and UndefinedBehaviorSanitizer. After editing
 module with it. `make fuzz FUZZ_SEED=N FUZZ_COUNT=M` runs other sheets; a
 failing one is kept in `build/kss-fuzz/` with a command that shrinks it.
 
-To test against local checkouts, keep them next to this one and put this in
-an ignored `ziran.local.toml`:
+To test against the local compiler and Kryon checkouts, put this in an
+ignored `ziran.local.toml`:
 
 ```toml
 [overrides]
-ziran = "../../ziranlang/ziran"
-kryon = "../kryon"
+ziran = "../../../ziranlang/ziran"
+kryon = "../../kryon"
 ```
