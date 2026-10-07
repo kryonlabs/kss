@@ -97,6 +97,12 @@ CSSValue :: (parser: KssParser, property: string, source: string, output: []u8, 
         return CSSWrite(output, at, TextView(digits[:]))
     }
     if value.kind == 1 {
+        if !value.has_token {
+            at = CSSWrite(output, at, value.text)
+            pixels: bool = value.text.count >= 2 && value.text[value.text.count - 2:] == "px"
+            if KssCSSNeedsPixels(property) && !pixels { at = CSSWrite(output, at, "px") }
+            return at
+        }
         bytes: [64]u8
         number: string = Number.FormatDecimal(cast(float64)value.number, 4, bytes[:])
         at = CSSWrite(output, at, number)
