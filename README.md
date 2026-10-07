@@ -26,6 +26,21 @@ install it without shipping the `.kss` file.
 
 ## Develop
 
+`ExportCSS(source, path, environment, output)` exports a supplied KSS source
+unit to CSS for Kryon's document host. Use the bytes through `result.count`
+only when `result.ok` is true. `StyleClass(name)` returns the class ID accepted
+by Kryon widget props. The exporter shares the parser, token resolution and
+environment rules; widget/class/state selectors become scoped DOM selectors,
+numeric units and axis properties are expanded, and media conditions survive.
+Source and saved IR run on C, C++ and Go in `tests/css_export_test.sh`.
+
+The current export subset rejects unresolved imports, KSS layers, nested
+selector functions, native materials, unknown foreign blocks and output
+overflow. Resolve imports or flatten layers before export. Unsupported output
+is reported explicitly rather than producing a usable partial sheet. Browser
+CSS keywords and authored units remain literal values. Native-only effects
+such as gradient endpoints and materials need an explicit browser stylesheet.
+
 `make check` checks the package, runs the parser and style tests as portable
 bundles and native code, verifies that `src/style_pack_classic.zi` matches
 `styles/classic.kss`, and fuzzes generated and damaged sheets under

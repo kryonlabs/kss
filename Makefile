@@ -13,6 +13,7 @@ STYLE_PACK_TOOL := $(BUILD)/tools/style_pack_module
 check: test style-pack-check fuzz
 
 test:
+	ZIRAN=$(ZIRAN) sh tests/css_export_test.sh
 	$(ZIRAN) check --project
 	$(ZIRAN) check --project src/kss_lexer_laws.zi
 	$(ZIRAN) bundle --project --entry style_parse_behavior:Answer \
