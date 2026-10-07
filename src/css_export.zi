@@ -1,0 +1,165 @@
+#import "kss_parser"
+Number :: #import "std/number_text";
+
+CSSExport :: struct { count: s32; ok: bool; error: string; }
+
+#program_export
+StyleClass :: (name: string) -> s32 { return KssClassId(KssMakeName(name)) }
+
+CSSWrite :: (output: []u8, at: s32, value: string) -> s32 {
+    if at < 0 || value.count > output.count - at { return -1 }
+    for byte: 0..cast(s32)value.count - 1 { output[at + byte] = value[byte] }
+    return at + cast(s32)value.count
+}
+
+CSSCompound :: (source: string, output: []u8, at: s32) -> s32 {
+    parser: KssSelectorCursor = KssBeginSelector(source)
+    while true {
+        atom: KssSelectorAtom = KssSelectorNext(parser)
+        if !atom.ok { return -1 }
+        if atom.done { return at }
+        first: s32 = parser.cursor.pos
+        parser = atom.parser
+        if atom.kind == 0 && atom.name.count > 0 && atom.name[0] >= cast(u8)65 && atom.name[0] <= cast(u8)90 {
+            if atom.name == "App" || atom.name == "Any" {
+                if atom.name == "Any" { at = CSSWrite(output, at, "*") }
+                else { at = CSSWrite(output, at, "[data-kryon-widget=\"Screen\"]") }
+            } else {
+                if KssKindValue(KssMakeName(atom.name)) < 0 { return -1 }
+                at = CSSWrite(output, at, "[data-kryon-widget=\"")
+                at = CSSWrite(output, at, atom.name); at = CSSWrite(output, at, "\"]")
+            }
+        } else if atom.kind == 2 {
+            digits: [32]u8
+            class_name: string = Number.FormatInteger(KssClassId(KssMakeName(atom.name)), digits[:])
+            at = CSSWrite(output, at, "[data-kryon-class=\"")
+            at = CSSWrite(output, at, class_name); at = CSSWrite(output, at, "\"]")
+        } else if atom.kind == 5 {
+            state: string = TextView(atom.canonical.bytes[:atom.canonical.length])
+            if state == "selected" { at = CSSWrite(output, at, "[aria-selected=\"true\"]") }
+            else if state == "loading" { at = CSSWrite(output, at, "[aria-busy=\"true\"]") }
+            else if state == "pressed" { at = CSSWrite(output, at, ":active") }
+            else if state == "readonly" { at = CSSWrite(output, at, ":read-only") }
+            else if state == "disabled" { at = CSSWrite(output, at, "[aria-disabled=\"true\"]") }
+            else if state == "focus" { at = CSSWrite(output, at, ":focus") }
+            else { at = CSSWrite(output, at, source[first:parser.cursor.pos]) }
+        } else if atom.kind == 6 || atom.kind == 7 || atom.has_argument {
+            // Nested selector functions need the same widget/class mapping.
+            // Reject them explicitly until that recursive mapping is provided.
+            return -1
+        } else { at = CSSWrite(output, at, source[first:parser.cursor.pos]) }
+        if at < 0 { return -1 }
+    }
+    return -1
+}
+
+CSSSelector :: (source: string, output: []u8, at: s32) -> s32 {
+    cursor: KssCursor; cursor.source = source
+    first: bool = true
+    while true {
+        part: KssSelectorSpan = KssSelectorPart(cursor, false)
+        if !part.ok { return -1 }
+        if part.done { return at }
+        if !first { at = CSSWrite(output, at, ", ") }
+        first = false
+        at = CSSWrite(output, at, "#kryon-dom-root ")
+        sequence: KssCursor
+        sequence.source = source[part.start:part.start + part.length]
+        while true {
+            compound: KssSelectorSpan = KssSelectorPart(sequence, true)
+            if !compound.ok { return -1 }
+            if compound.done { break }
+            if compound.combinator != 0 {
+                if compound.combinator == 32 { at = CSSWrite(output, at, " ") }
+                else {
+                    byte: [1]u8; byte[0] = cast(u8)compound.combinator
+                    at = CSSWrite(output, at, TextView(byte[:]))
+                }
+            }
+            at = CSSCompound(sequence.source[compound.start:compound.start + compound.length], output, at)
+            if at < 0 { return -1 }
+            sequence = compound.parser
+        }
+        cursor = part.parser
+    }
+    return -1
+}
+
+CSSValue :: (parser: KssParser, property: string, source: string, output: []u8, at: s32) -> s32 {
+    value: KssCSSValue = KssResolveCSSValue(parser, property, source)
+    if !value.valid || value.kind == 3 { return -1 }
+    if value.kind == 2 {
+        digits: [9]u8; digits[0] = 35
+        hex: string = "0123456789abcdef"
+        for index: cast(s32)0..7 {
+            digits[index + 1] = hex[(value.color >> cast(u32)((7 - index) * 4)) & cast(u32)15]
+        }
+        return CSSWrite(output, at, TextView(digits[:]))
+    }
+    if value.kind == 1 {
+        bytes: [64]u8
+        number: string = Number.FormatDecimal(cast(float64)value.number, 4, bytes[:])
+        at = CSSWrite(output, at, number)
+        if KssCSSNeedsPixels(property) { at = CSSWrite(output, at, "px") }
+        return at
+    }
+    return CSSWrite(output, at, value.text)
+}
+
+// Export a fully supplied source unit using the existing KSS parser, tokens
+// and environment rules. Output is usable only when ok is true. Hosts that
+// need imports resolve them before export; imports and unsupported constructs
+// fail explicitly, never attach a partly emitted sheet.
+#program_export
+ExportCSS :: (source: string, path: string, env: KssEnvironment, output: []u8) -> CSSExport {
+    result: CSSExport
+    parser: KssParser = KssBeginDeclarative(source, path, env)
+    at: s32 = 0
+    groups: [16]bool
+    while true {
+        parser = KssStep(parser)
+        if parser.status == 3 {
+            for group: 0..parser.foreign_count - 1 {
+                if !groups[group] { result.error = "Unsupported CSS block"; return result }
+            }
+            result.count = at; result.ok = true; return result
+        }
+        if parser.status == 2 { result.error = "Resolve KSS imports before CSS export"; return result }
+        if parser.status == 4 { result.error = "Invalid KSS"; return result }
+        if parser.status != 1 { continue }
+        if parser.layer_declared { result.error = "CSS export does not support KSS layers"; return result }
+        group: s32 = parser.rule_span.group
+        if group >= 0 {
+            groups[group] = true
+            block: KssForeignBlock = parser.foreign[group]
+            name: string = TextView(block.name.bytes[:block.name.length])
+            at = CSSWrite(output, at, "@"); at = CSSWrite(output, at, name)
+            at = CSSWrite(output, at, " ")
+            at = CSSWrite(output, at, source[block.query_start:block.query_start + block.query_length])
+            at = CSSWrite(output, at, " {\n")
+        }
+        span: KssRuleSpan = parser.rule_span
+        at = CSSSelector(source[span.selector_start:span.selector_start + span.selector_length], output, at)
+        at = CSSWrite(output, at, " {\n")
+        for index: 0..parser.declaration_count - 1 {
+            declaration: KssDeclaration = parser.declarations[index]
+            if declaration.rule != parser.rule_total - 1 { continue }
+            property: string = source[declaration.name_start:declaration.name_start + declaration.name_length]
+            value: string = source[declaration.value_start:declaration.value_start + declaration.value_length]
+            expansion: KssCSSExpansion = KssCSSExpandDeclaration(property, value, false)
+            if expansion.first == "" || property == "background-end" || property == "material" { result.error = "Unsupported CSS declaration"; return result }
+            for side: 0..1 {
+                name: string = expansion.first
+                if side == 1 { name = expansion.second }
+                if name.count == 0 { continue }
+                at = CSSWrite(output, at, name); at = CSSWrite(output, at, ": ")
+                at = CSSValue(parser, property, value, output, at)
+                at = CSSWrite(output, at, ";\n")
+            }
+        }
+        at = CSSWrite(output, at, "}\n")
+        if group >= 0 { at = CSSWrite(output, at, "}\n") }
+        if at < 0 { result.error = "Unsupported selector/value or CSS output capacity exceeded"; return result }
+    }
+    return result
+}
