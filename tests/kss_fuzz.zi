@@ -947,7 +947,7 @@ ParseTable :: (source: string) {
                 ImportName(imports - 1, table.parser.pending_import))
         }
     }
-    Check(table.rules.count >= 0 && table.rules.count <= 320, "rule table count out of range")
+    Check(table.rules.count >= 0 && table.rules.count <= StyleRuleCapacity, "rule table count out of range")
 }
 
 SameFloat :: (a: float32, b: float32) -> bool {
@@ -956,32 +956,32 @@ SameFloat :: (a: float32, b: float32) -> bool {
 
 SameSelector :: (a: StyleSelector, b: StyleSelector) -> bool {
     return a.kind == b.kind && a.name == b.name && a.class_name == b.class_name &&
-        a.role == b.role && a.tone == b.tone && a.emphasis == b.emphasis &&
-        a.size == b.size && a.state == b.state && a.validation == b.validation &&
-        a.orientation == b.orientation && a.placement == b.placement
+    a.role == b.role && a.tone == b.tone && a.emphasis == b.emphasis &&
+    a.size == b.size && a.state == b.state && a.validation == b.validation &&
+    a.orientation == b.orientation && a.placement == b.placement
 }
 
 SameStyle :: (a: StyleData, b: StyleData) -> bool {
     return a.fields == b.fields && a.background == b.background &&
-        a.foreground == b.foreground && a.border == b.border && a.focus == b.focus &&
-        SameFloat(a.radius, b.radius) && SameFloat(a.border_width, b.border_width) &&
-        SameFloat(a.opacity, b.opacity) && SameFloat(a.padding_x, b.padding_x) &&
-        SameFloat(a.padding_y, b.padding_y) && SameFloat(a.gap, b.gap) &&
-        SameFloat(a.font_size, b.font_size) && SameFloat(a.icon_size, b.icon_size) &&
-        SameFloat(a.offset_x, b.offset_x) && SameFloat(a.offset_y, b.offset_y) &&
-        a.background_end == b.background_end && a.material == b.material &&
-        a.typeface == b.typeface && SameFloat(a.letter_spacing, b.letter_spacing)
+    a.foreground == b.foreground && a.border == b.border && a.focus == b.focus &&
+    SameFloat(a.radius, b.radius) && SameFloat(a.border_width, b.border_width) &&
+    SameFloat(a.opacity, b.opacity) && SameFloat(a.padding_x, b.padding_x) &&
+    SameFloat(a.padding_y, b.padding_y) && SameFloat(a.gap, b.gap) &&
+    SameFloat(a.font_size, b.font_size) && SameFloat(a.icon_size, b.icon_size) &&
+    SameFloat(a.offset_x, b.offset_x) && SameFloat(a.offset_y, b.offset_y) &&
+    a.background_end == b.background_end && a.material == b.material &&
+    a.typeface == b.typeface && SameFloat(a.letter_spacing, b.letter_spacing)
 }
 
 SameRule :: (a: StyleRule, b: StyleRule) -> bool {
     return SameSelector(a.selector, b.selector) && a.state == b.state &&
-        a.layer == b.layer && a.order == b.order && SameStyle(a.style, b.style)
+    a.layer == b.layer && a.order == b.order && SameStyle(a.style, b.style)
 }
 
 SameToken :: (a: KssToken, b: KssToken) -> bool {
     if a.name.length != b.name.length || a.kind != b.kind || a.color != b.color ||
-        !SameFloat(a.number, b.number) || a.material != b.material ||
-        a.origin != b.origin {
+    !SameFloat(a.number, b.number) || a.material != b.material ||
+    a.origin != b.origin {
         return false
     }
     index: s32 = 0
@@ -1091,15 +1091,15 @@ SameName :: (a: KssName, b: KssName) -> bool {
 
 SameOutcome :: (a: Outcome, b: Outcome) -> bool {
     if a.status != b.status || a.rule_count != b.rule_count ||
-        a.token_count != b.token_count || a.declaration_count != b.declaration_count ||
-        a.foreign_count != b.foreign_count || a.variant_count != b.variant_count {
+    a.token_count != b.token_count || a.declaration_count != b.declaration_count ||
+    a.foreign_count != b.foreign_count || a.variant_count != b.variant_count {
         return false
     }
     // Variant labels are quoted text the formatter must leave alone.
     index: s32 = 0
     while index < a.variant_count && index < 8 {
         if !SameName(a.variants[index].name, b.variants[index].name) ||
-            !SameName(a.variants[index].label, b.variants[index].label) {
+        !SameName(a.variants[index].label, b.variants[index].label) {
             return false
         }
         index += 1
@@ -1346,7 +1346,7 @@ main :: (argc: s32, argv: **s8) -> s32 {
             }
             RunCase()
             if path.count > 7 && path[path.count - 7:path.count] == ".ok.kss" &&
-                last_status != cast(s32)KssStatusDone {
+            last_status != cast(s32)KssStatusDone {
                 WriteText(2, path)
                 WriteText(2, "\n")
                 Fail("a sheet named .ok.kss does not parse")

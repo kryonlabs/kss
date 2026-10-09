@@ -5,7 +5,7 @@
 // provenance always reflects the winning value. Variant color overrides are
 // applied on add, matching the highest precedence layer.
 
-KssFindToken :: (p: KssParser, name: KssName, kind: s32) -> s32 {
+KssFindToken :: (p: *KssParser, name: KssName, kind: s32) -> s32 {
     index: s32 = p.token_count - 1
     while index >= 0 {
         if p.tokens[index].kind == kind && KssNameEqualsName(p.tokens[index].name, name) {
@@ -47,7 +47,7 @@ KssAddToken :: (p: KssParser, token: KssToken) -> KssParser {
 
 KssOverlayToken :: (p: KssParser, name: KssName, kind: s32, color: u32,
     number: float32, material: s32, origin: s32) -> KssParser {
-    index: s32 = KssFindToken(p, name, kind)
+    index: s32 = KssFindToken(*p, name, kind)
     if index < 0 {
         return KssFailName(p, "unknown overlay token '", name)
     }
@@ -66,7 +66,7 @@ KssOverlayToken :: (p: KssParser, name: KssName, kind: s32, color: u32,
     return p
 }
 
-KssFindColorToken :: (p: KssParser, name: KssName) -> s32 {
+KssFindColorToken :: (p: *KssParser, name: KssName) -> s32 {
     return KssFindToken(p, name, cast(s32)KssTokenColor)
 }
 
@@ -81,7 +81,7 @@ name: string) -> KssColorTokenResult {
     result: KssColorTokenResult
     result.found = false
     result.color = 0
-    index: s32 = KssFindColorToken(parser, KssMakeName(name))
+    index: s32 = KssFindColorToken(*parser, KssMakeName(name))
     if index >= 0 {
         result.found = true
         result.color = parser.tokens[index].color
@@ -89,7 +89,7 @@ name: string) -> KssColorTokenResult {
     return result
 }
 
-KssFindNumberToken :: (p: KssParser, name: KssName) -> s32 {
+KssFindNumberToken :: (p: *KssParser, name: KssName) -> s32 {
     index: s32 = KssFindToken(p, name, cast(s32)KssTokenDuration)
     if index >= 0 {
         return index
@@ -97,7 +97,7 @@ KssFindNumberToken :: (p: KssParser, name: KssName) -> s32 {
     return KssFindToken(p, name, cast(s32)KssTokenLength)
 }
 
-KssFindMaterialToken :: (p: KssParser, name: KssName) -> s32 {
+KssFindMaterialToken :: (p: *KssParser, name: KssName) -> s32 {
     return KssFindToken(p, name, cast(s32)KssTokenMaterial)
 }
 

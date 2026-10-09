@@ -388,7 +388,7 @@ KssReadColorValue :: (p: KssParser) -> KssColorResult {
     reference: KssNameResult = KssReadName(hex.parser)
     if reference.ok {
         p.cursor = reference.parser
-        index: s32 = KssFindColorToken(p, reference.name)
+        index: s32 = KssFindColorToken(*p, reference.name)
         if index >= 0 {
             hex.value = p.tokens[index].color
             hex.ok = true
@@ -430,7 +430,7 @@ KssReadNumberValue :: (p: KssParser) -> KssNumberResult {
     reference: KssNameResult = KssReadName(literal.parser)
     if reference.ok {
         p.cursor = reference.parser
-        index: s32 = KssFindNumberToken(p, reference.name)
+        index: s32 = KssFindNumberToken(*p, reference.name)
         if index >= 0 {
             literal.value = p.tokens[index].number
             literal.ok = true
@@ -460,7 +460,7 @@ KssReadMaterialValue :: (p: KssParser) -> KssIntResult {
     mapped: s32 = KssMaterialValue(reference.name)
     if mapped == -999999 {
         p.cursor = reference.parser
-        index: s32 = KssFindMaterialToken(p, reference.name)
+        index: s32 = KssFindMaterialToken(*p, reference.name)
         if index >= 0 {
             mapped = p.tokens[index].material
         }
