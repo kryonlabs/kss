@@ -19,22 +19,13 @@ KssFindToken :: (p: KssParser, name: KssName, kind: s32) -> s32 {
 KssApplyOverride :: (p: KssParser, index: s32) -> KssParser {
     override: s32 = 0
     while override < p.override_count {
-        if p.tokens[index].kind == cast(s32)KssTokenColor &&
-           cast(s32)p.overrides[override].name.count == p.tokens[index].name.length {
-            same: bool = true
-            byte_index: s32 = 0
-            while byte_index < p.tokens[index].name.length {
-                if KssLower(p.overrides[override].name[byte_index]) !=
-                   KssLower(p.tokens[index].name.bytes[byte_index]) {
-                    same = false
-                }
-                byte_index = byte_index + 1
-            }
-            if same {
-                p.tokens[index].color = p.overrides[override].color
-                p.tokens[index].origin = cast(s32)KssOriginVariant
-                return p
-            }
+        if p.tokens[index].kind == p.overrides[override].kind &&
+        KssNameEqualsName(p.tokens[index].name, p.overrides[override].name) {
+            p.tokens[index].color = p.overrides[override].color
+            p.tokens[index].number = p.overrides[override].number
+            p.tokens[index].material = p.overrides[override].material
+            p.tokens[index].origin = cast(s32)KssOriginVariant
+            return p
         }
         override = override + 1
     }

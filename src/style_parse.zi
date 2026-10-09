@@ -82,6 +82,13 @@ InstallParsedStyleRules :: (result: StyleRulesParse) -> bool {
         }
         index += 1
     }
+    // Rule installation owns and validates typeface storage. Publish it before
+    // changing colors, so a rejected snapshot preserves the entire old theme.
+    // The validated color table contains at most 128 names of at most 64 bytes;
+    // after clearing, every color insertion is therefore guaranteed to fit.
+    if !InstallStyleRules(result.rules) {
+        return false
+    }
     ClearStyleTokenColors()
     index = 0
     while index < result.parser.token_count {
@@ -93,5 +100,5 @@ InstallParsedStyleRules :: (result: StyleRulesParse) -> bool {
         }
         index += 1
     }
-    return InstallStyleRules(result.rules)
+    return true
 }

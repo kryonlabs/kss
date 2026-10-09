@@ -24,6 +24,12 @@ sheet in steps and install it; `ProvideStyleRulesImport` answers an
 classic pack is also compiled in as `style_pack_classic`, so an app can
 install it without shipping the `.kss` file.
 
+Customization hosts can use `KssAddTokenOverride` before parsing to override
+color, length, duration, or material tokens throughout a pack. A later override
+of the same name and kind replaces the earlier value. Names are owned by the
+parser; invalid names and exhausted capacity produce diagnostics. Rule
+installation validates the new snapshot before replacing existing colors.
+
 ## Develop
 
 `ExportCSS(source, path, environment, output)` exports a supplied KSS source

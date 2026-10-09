@@ -175,11 +175,6 @@ KssToken :: struct {
     column: s32
 }
 
-KssColorOverride :: struct {
-    name: string
-    color: u32
-}
-
 KssOrigin :: struct {
     file: s32
     line: s32
@@ -253,7 +248,7 @@ KssParser :: struct {
     import_depth: s32
     tokens: [128]KssToken
     token_count: s32
-    overrides: [64]KssColorOverride
+    overrides: [128]KssToken
     override_count: s32
     layer: s32
     layer_names: [12]KssName
@@ -338,11 +333,35 @@ KssBeginDeclarative :: (source: string, path: string, env: KssEnvironment) -> Ks
 
 #program_export
 KssAddColorOverride :: (p: KssParser, name: string, color: u32) -> KssParser {
-    if p.override_count < 64 {
-        p.overrides[p.override_count].name = name
-        p.overrides[p.override_count].color = color
-        p.override_count = p.override_count + 1
+    token: KssToken
+    token.name = KssMakeName(name)
+    token.kind = cast(s32)KssTokenColor
+    token.color = color
+    return KssAddTokenOverride(p, token)
+}
+
+// Customization hosts can override any typed token before parsing a pack.
+// Replacing a named override makes precedence explicit and keeps the table
+// bounded when user preferences replace a host's theme palette.
+#program_export
+KssAddTokenOverride :: (p: KssParser, token: KssToken) -> KssParser {
+    if token.name.length <= 0 || token.name.length > 64 ||
+    token.kind < cast(s32)KssTokenColor ||
+    token.kind > cast(s32)KssTokenMaterial {
+        return KssFail(p, "invalid token override")
     }
+    for index: cast(s32)0..p.override_count - 1 {
+        if p.overrides[index].kind == token.kind &&
+        KssNameEqualsName(p.overrides[index].name, token.name) {
+            p.overrides[index] = token
+            return p
+        }
+    }
+    if p.override_count >= 128 {
+        return KssFail(p, "token override capacity exceeded")
+    }
+    p.overrides[p.override_count] = token
+    p.override_count += 1
     return p
 }
 
