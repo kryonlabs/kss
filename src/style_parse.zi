@@ -26,7 +26,7 @@ StepStyleRules :: (result: StyleRulesParse) -> StyleRulesParse {
     if result.overflow { return result }
     result.parser = KssStep(result.parser)
     if result.parser.status == cast(s32)KssStatusRule {
-        if result.rules.count < 0 || result.rules.count >= 320 {
+        if result.rules.count < 0 || result.rules.count >= StyleRuleCapacity {
             result.overflow = true
         } else {
             result.rules.items[result.rules.count] = result.parser.rule
@@ -39,9 +39,9 @@ StepStyleRules :: (result: StyleRulesParse) -> StyleRulesParse {
 #program_export
 ParseStyleRules :: (result: StyleRulesParse) -> StyleRulesParse {
     while !result.overflow &&
-        result.parser.status != cast(s32)KssStatusNeedImport &&
-        result.parser.status != cast(s32)KssStatusDone &&
-        result.parser.status != cast(s32)KssStatusError {
+    result.parser.status != cast(s32)KssStatusNeedImport &&
+    result.parser.status != cast(s32)KssStatusDone &&
+    result.parser.status != cast(s32)KssStatusError {
         result = StepStyleRules(result)
     }
     return result
@@ -51,7 +51,7 @@ ParseStyleRules :: (result: StyleRulesParse) -> StyleRulesParse {
 ProvideStyleRulesImport :: (result: StyleRulesParse,
     source: string, name: string) -> StyleRulesParse {
     if !result.overflow &&
-        result.parser.status == cast(s32)KssStatusNeedImport {
+    result.parser.status == cast(s32)KssStatusNeedImport {
         result.parser = KssProvideImport(result.parser, source, name)
     }
     return result
@@ -60,7 +60,7 @@ ProvideStyleRulesImport :: (result: StyleRulesParse,
 #program_export
 FailStyleRulesImport :: (result: StyleRulesParse) -> StyleRulesParse {
     if !result.overflow &&
-        result.parser.status == cast(s32)KssStatusNeedImport {
+    result.parser.status == cast(s32)KssStatusNeedImport {
         result.parser = KssFailImport(result.parser)
     }
     return result
@@ -77,7 +77,7 @@ InstallParsedStyleRules :: (result: StyleRulesParse) -> bool {
     while index < result.parser.token_count {
         token: KssToken = result.parser.tokens[index]
         if token.kind == cast(s32)KssTokenColor &&
-            (token.name.length <= 0 || token.name.length > 64) {
+        (token.name.length <= 0 || token.name.length > 64) {
             return false
         }
         index += 1
@@ -94,8 +94,8 @@ InstallParsedStyleRules :: (result: StyleRulesParse) -> bool {
     while index < result.parser.token_count {
         token: KssToken = result.parser.tokens[index]
         if token.kind == cast(s32)KssTokenColor &&
-            !SetStyleTokenColorBytes(
-                token.name.bytes[0:token.name.length], token.color) {
+        !SetStyleTokenColorBytes(
+            token.name.bytes[0:token.name.length], token.color) {
             return false
         }
         index += 1

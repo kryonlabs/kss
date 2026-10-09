@@ -917,9 +917,9 @@ KssResolveCSSValue :: (p: KssParser, property: string, source: string) -> KssCSS
     }
     index: s32 = -1
     if property_kind == cast(s32)KssTokenLength {
-        index = KssFindNumberToken(p, reference.name)
+        index = KssFindNumberToken(*p, reference.name)
     } else {
-        index = KssFindToken(p, reference.name, property_kind)
+        index = KssFindToken(*p, reference.name, property_kind)
     }
     if index < 0 {
         return result
