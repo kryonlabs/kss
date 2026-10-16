@@ -268,9 +268,11 @@ NavigationBarItem:disabled {
   opacity: 0.45;
 }
 
+// A tab bar is a row of labels over a divider. The selected tab's border is
+// its indicator on the edge facing the content.
 TabBar {
   font-size: font.md;
-  background: surface;
+  background: transparent;
   foreground: text;
   border: border-soft;
   radius: radius.md;
@@ -288,8 +290,8 @@ Tab {
   foreground: muted;
   border: transparent;
   focus: focus;
-  radius: radius.lg;
-  border-width: border.none;
+  radius: radius.md;
+  border-width: 3;
   padding-x: space.3;
   padding-y: space.2;
   icon-size: 44;
@@ -309,8 +311,8 @@ Tab:pressed {
 }
 
 Tab:selected {
-  background: accent;
-  foreground: accent-ink;
+  background: transparent;
+  foreground: text;
   border: accent;
 }
 
